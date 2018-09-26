@@ -13,12 +13,12 @@ def findVideoMetada(pathToInputVideo):
     ffprobeOutput = subprocess.check_output(args).decode('utf-8')
     ffprobeOutput = json.loads(ffprobeOutput)
 
-    # prints all the metadata available:
-    import pprint
-    pp = pprint.PrettyPrinter(indent=2)
-    pp.pprint(ffprobeOutput)
 
-    # for example, find height and width
+    # import pprint
+    # pp = pprint.PrettyPrinter(indent=2)
+    # pp.pprint(ffprobeOutput)
+
+
     height = ffprobeOutput['streams'][0]['height']
     width = ffprobeOutput['streams'][0]['width']
     duration = ffprobeOutput['streams'][0]['duration']
