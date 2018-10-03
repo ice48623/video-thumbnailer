@@ -39,11 +39,15 @@ def download_file(video_host, video_bucket_name, video_object_name, port = "8080
         os.makedirs(directory)
 
     r = requests.get(url, stream=True)
+    total_length = int(r.headers.get('Content-Length'))
+    collected = 0
     with open(save_location, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
             if chunk: # filter out keep-alive new chunks
                 f.write(chunk)
+                collected += len(chunk)
                 #f.flush() commented by recommendation from J.F.Sebastian
+    return total_length == collected
 
 def generateGIF(video_host, video_bucket_name, video_object_name, target_host, target_bucket_name, target_object_name):
     print("Generating GIF")
@@ -65,6 +69,7 @@ def generateGIF(video_host, video_bucket_name, video_object_name, target_host, t
     call(["ffmpeg", "-i", BASE_FOLDER + video_bucket_name + "/" + video_object_name, "-r", str(desired_frame), "-vf", "scale=320:-1", BASE_FOLDER + video_bucket_name + "/frames/" + file_format])
     call(["convert", "-delay", str(interval), "-loop", "0", BASE_FOLDER + video_bucket_name + "/frames/*.png", BASE_FOLDER + target_bucket_name + "/" + target_object_name])
     call(["rm", "-rf", BASE_FOLDER + video_bucket_name + "/frames"])
+
 def parser(ch, method, properties, body):
     print(" [x] Received %r" % body)
     body = body.decode('utf8').replace("'", '"')
@@ -89,8 +94,8 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST)
 channel = connection.channel()
 
 channel.queue_declare(queue='task_queue')
+channel.basic_qos(prefetch_count=1)
 channel.basic_consume(parser,
-                      queue='task_queue',
-                      no_ack=False)
+                      queue='task_queue')
 print('Waiting for messages.')
 channel.start_consuming()
