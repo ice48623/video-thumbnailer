@@ -53,6 +53,13 @@ def md5(file_path):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
+def create_bucket(target_host, target_bucket_name, target_object_name, port="8080"):
+    try:
+        url = "http://" + target_host + ":" + port + "/" + target_bucket_name + "?create"
+        requests.post(url)
+    except:
+        print("may be bucket only exist")
+
 def create_upload_ticket(target_host, target_bucket_name, target_object_name, port="8080"):
     url = "http://" + target_host + ":" + port + "/" + target_bucket_name + "/" + target_object_name + "?create"
     requests.post(url)
@@ -68,14 +75,14 @@ def upload_file(file_path, target_host, target_bucket_name, target_object_name, 
         file_size = os.path.getsize(file_path)
     except:
         print("file not found")
-    create_upload_ticket(target_host, target_bucket_name, target_object_name)
+
     with open(file_path,'rb') as payload:
         headers = {'Content-Type': 'application/octet-stream', 'Content-Length': str(file_size), 'Content-MD5': str(md5(file_path))}
         url = "http://" + target_host + ":" + port + "/" + target_bucket_name + "/" + target_object_name + "?partNumber=" + part_number
         print(url)
         requests.put(url, data=payload, headers=headers)
 
-    complete_upload(target_host, target_bucket_name, target_object_name)
+
 def generateGIF(video_host, video_bucket_name, video_object_name, target_host, target_bucket_name, target_object_name):
     print("Generating GIF")
     file_format = "frame-%03d.png"
@@ -117,8 +124,11 @@ def parser(ch, method, properties, body):
 def logic(video_host, video_bucket_name, video_object_name, target_host, target_bucket_name, target_object_name):
     download_file(video_host, video_bucket_name, video_object_name)
     output_file_path = generateGIF(video_host, video_bucket_name, video_object_name, target_host, target_bucket_name, target_object_name)
+    create_bucket(target_host, target_bucket_name, target_object_name)
+    create_upload_ticket(target_host, target_bucket_name, target_object_name)
     upload_file(output_file_path, target_host, target_bucket_name, target_object_name)
-
+    complete_upload(target_host, target_bucket_name, target_object_name)
+    
 print("Start worker")
 time.sleep(5)
 RABBIT_HOST = os.getenv('RABBIT_HOST','localhost')
