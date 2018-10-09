@@ -128,15 +128,15 @@ def logic(video_host, video_bucket_name, video_object_name, target_host, target_
     create_upload_ticket(target_host, target_bucket_name, target_object_name)
     upload_file(output_file_path, target_host, target_bucket_name, target_object_name)
     complete_upload(target_host, target_bucket_name, target_object_name)
-    
+
 print("Start worker")
-time.sleep(5)
+# time.sleep(5)
 RABBIT_HOST = os.getenv('RABBIT_HOST','localhost')
 connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBIT_HOST))
 channel = connection.channel()
 
 channel.queue_declare(queue='task_queue')
-channel.basic_qos(prefetch_count=1)
+# channel.basic_qos(prefetch_count=1)
 channel.basic_consume(parser,
                       queue='task_queue')
 print('Waiting for messages.')
